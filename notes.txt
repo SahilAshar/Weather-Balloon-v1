@@ -1,0 +1,8 @@
+need to pip install all these libraries: https://github.com/adafruit/Adafruit_CircuitPython_Bundle
+
+BME280 Sensor: https://github.com/adafruit/Adafruit_CircuitPython_BME280
+BNO055 IMU: https://github.com/adafruit/Adafruit_CircuitPython_BNO055
+Ultimate GPS: https://github.com/adafruit/Adafruit_CircuitPython_GPS
+
+Creating Documentation: https://readthedocs.org/
+Rasbian VirtualBox VM: https://www.osboxes.org/raspbian/#raspbian-2018-11-26-vbox
