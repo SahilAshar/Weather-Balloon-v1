@@ -1,19 +1,20 @@
 
 import datetime
 import time
-#import board
-#import busio
-#import adafruit_bno055
+import board
+import busio
+import adafruit_bno055
 
 f = open("bno055.txt", "a+") #appends a file, creates new one if not there, can create file in the initilization by f = open("bme280.txt", "w+")
-f.write("time    Temperature    Accelerometer    Magnetometer    Gyroscope    Euler angle     Quaternion    Linear acceleration    Gravity\n")
+f.write("Time    Temperature    Accelerometer    Magnetometer    Gyroscope    Euler angle     Quaternion    Linear acceleration    Gravity\n")
+
 i2c = busio.I2C(board.SCL, board.SDA)
 sensor = adafruit_bno055.BNO055(i2c)
 
 
 while True:
-
-    f.write('{}    '.format(sensor.temperature))
+    f.write(str(datetime.datetime.now()) )
+    f.write('    {}    '.format(sensor.temperature))
     f.write('{}    ' .format(sensor.accelerometer))
     f.write('{}    '.format(sensor.magnetometer))
     f.write('{}    '.format(sensor.gyroscope))
