@@ -18,7 +18,7 @@ import busio
 import adafruit_bme280
 
 f = open("bme280.txt", "a+") #appends a file, creates new one if not there, can create file in the initilization by f = open("bme280.txt", "w+")
-f.write("time    tempurature    humidity    pressure    altitude\n")
+f.write("Time    Tempurature    Humidity    Pressure    Altitude\n")
 
 i2c = busio.I2C(board.SCL, board.SDA)
 bme280 = adafruit_bme280.Adafruit_BME280_I2C(i2c)
