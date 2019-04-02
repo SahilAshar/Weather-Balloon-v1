@@ -1,0 +1,3 @@
+- changed the default adafruit library cause there's a bug in it, used the
+	pull request #17(from the Adafruit_CircuitPython_GPS library)
+	for reference
