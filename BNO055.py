@@ -13,14 +13,16 @@ sensor = adafruit_bno055.BNO055(i2c)
 
 
 while True:
-    f.write(str(datetime.datetime.now()) )
-    f.write('    {}    '.format(sensor.temperature))
-    f.write('{}    ' .format(sensor.accelerometer))
-    f.write('{}    '.format(sensor.magnetometer))
-    f.write('{}    '.format(sensor.gyroscope))
-    f.write('{}    '.format(sensor.euler))
-    f.write('{}    '.format(sensor.quaternion))
-    f.write('{}    '.format(sensor.linear_acceleration))
-    f.write('{}\n'.format(sensor.gravity))
-    time.sleep(1) #however long we want, in seconds
+	f.write(str(datetime.datetime.now()) )
+	f.write('    {}    '.format(sensor.temperature))
+	f.write('{}    ' .format(sensor.accelerometer))
+	f.write('{}    '.format(sensor.magnetometer))
+	f.write('{}    '.format(sensor.gyroscope))
+	f.write('{}    '.format(sensor.euler))
+	f.write('{}    '.format(sensor.quaternion))
+	f.write('{}    '.format(sensor.linear_acceleration))
+	f.write('{}\n'.format(sensor.gravity))
+	f.flush()
+	time.sleep(1) #however long we want, in seconds
 
+f.close()
