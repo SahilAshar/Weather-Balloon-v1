@@ -1,107 +1,104 @@
-# Simple GPS datalogging demonstration.
-# This actually doesn't even use the GPS library and instead just reads raw
-# NMEA sentences from the GPS unit and dumps them to a file on an SD card
-# (recommended) or internal storage (be careful as only a few kilobytes to
-# megabytes are available).  Before writing to internal storage you MUST
-# carefully follow the steps in this guide to enable writes to the internal
-# filesystem:
-#  https://learn.adafruit.com/adafruit-ultimate-gps-featherwing/circuitpython-library
+# Simple GPS module demonstration.
+# Will wait for a fix and print a message every second with the current location
+# and other details.
+import time
 import board
 import busio
 
+import adafruit_gps
 
-# Path to the file to log GPS data.  By default this will be appended to
-# which means new lines are added at the end and all old data is kept.
-# Change this path to point at internal storage (like '/gps.txt') or SD
-# card mounted storage ('/sd/gps.txt') as desired.
-LOG_FILE = '/gps.txt'  # Example for writing to internal path /gps.txt
-#LOG_FILE = '/sd/gps.txt'     # Example for writing to SD card path /sd/gps.txt
-
-# File more for opening the log file.  Mode 'ab' means append or add new lines
-# to the end of the file rather than erasing it and starting over.  If you'd
-# like to erase the file and start clean each time use the value 'wb' instead.
-LOG_MODE = 'ab'
+f = open("GPS.txt", "a+") 
 
 # Define RX and TX pins for the board's serial port connected to the GPS.
 # These are the defaults you should use for the GPS FeatherWing.
 # For other boards set RX = GPS module TX, and TX = GPS module RX pins.
-RX = board.RX
-TX = board.TX
-
-# If writing to SD card customize and uncomment these lines to import the
-# necessary library and initialize the SD card:
-#SD_CS_PIN = board.SD_CS  # CS for SD card (SD_CS is for Feather Adalogger)
-#import adafruit_sdcard
-#spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
-#sd_cs = digitalio.DigitalInOut(SD_CS_PIN)
-#sdcard = adafruit_sdcard.SDCard(spi, sd_cs)
-#vfs = storage.VfsFat(sdcard)
-#storage.mount(vfs, '/sd')  # Mount SD card under '/sd' path in filesystem.
+RX = board.RXD
+TX = board.TXD
 
 # Create a serial connection for the GPS connection using default speed and
 # a slightly higher timeout (GPS modules typically update once a second).
-uart = busio.UART(TX, RX, baudrate=9600, timeout=3000)
+#uart = busio.UART(TX, RX, baudrate=9600, timeout=3000)
 
-# Main loop just reads data from the GPS module and writes it back out to
-# the output file while also printing to serial output.
-with open(LOG_FILE, LOG_MODE) as outfile:
-    while True:
-        sentence = uart.readline()
-        print(str(sentence, 'ascii').strip())
-        outfile.write(sentence)
-        outfile.flush()
+# for a computer, use the pyserial library for uart access
+import serial
+uart = serial.Serial("/dev/ttyS0", baudrate=9600, timeout=3000)
+print("HERE!")
 
+# Create a GPS module instance.
+gps = adafruit_gps.GPS(uart, debug=True)
+print(gps.debug)
+print(gps.fix_quality)
+print(gps.has_fix)
 
+# Initialize the GPS module by changing what data it sends and at what rate.
+# These are NMEA extensions for PMTK_314_SET_NMEA_OUTPUT and
+# PMTK_220_SET_NMEA_UPDATERATE but you can send anything from here to adjust
+# the GPS module behavior:
+#   https://cdn-shop.adafruit.com/datasheets/PMTK_A11.pdf
 
+# Turn on the basic GGA and RMC info (what you typically want)
+gps.send_command(b'PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ')
+# Turn on just minimum info (RMC only, location):
+#gps.send_command(b'PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0')
+# Turn off everything:
+#gps.send_command(b'PMTK314,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0')
+# Tuen on everything (not all of it is parsed!)
+#gps.send_command(b'PMTK314,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0')
 
+# Set update rate to once a second (1hz) which is what you typically want.
+gps.send_command(b'PMTK220,1000')
+# Or decrease to once every two seconds by doubling the millisecond value.
+# Be sure to also increase your UART timeout above!
+#gps.send_command(b'PMTK220,2000')
+# You can also speed up the rate, but don't go too fast or else you can lose
+# data during parsing.  This would be twice a second (2hz, 500ms delay):
+#gps.send_command(b'PMTK220,500')
 
+# Main loop runs forever printing the location, etc. every second.
+last_print = time.monotonic()
+while True:
+    # Make sure to call gps.update() every loop iteration and at least twice
+    # as fast as data comes from the GPS unit (usually every second).
+    # This returns a bool that's true if it parsed new data (you can ignore it
+    # though if you don't care and instead look at the has_fix property).
+    # print("before GPS Update")
+    # did_update =  gps.update()
+    # print(did_update)
 
+    gps.update()
 
-
-
-#Example output data:
-
-#$GPGGA,181908.00,3404.7041778,N,07044.3966270,
-#W,4,13,1.00,495.144,M,29.200,M,0.10,0000*40
-
-#All NMEA messages start with the $ character, and each data field is separated by a comma.
-
-#GP represent that it is a GPS position (GL would denote GLONASS).
-
-#181908.00 is the time stamp: UTC time in hours, minutes and seconds.
-
-#3404.7041778 is the latitude in the DDMM.MMMMM format. Decimal places are variable.
-
-#N denotes north latitude.
-
-#07044.3966270 is the longitude in the DDDMM.MMMMM format. Decimal places are variable.
-
-#W denotes west longitude.
-
-#4 denotes the Quality Indicator:
-
-#1 = Uncorrected coordinate
-
-#2 = Differentially correct coordinate (e.g., WAAS, DGPS)
-
-#4 = RTK Fix coordinate (centimeter precision)
-
-#5 = RTK Float (decimeter precision.
-
-#13 denotes number of satellites used in the coordinate.
-
-#1.0 denotes the HDOP (horizontal dilution of precision).
-
-#495.144 denotes altitude of the antenna.
-
-#M denotes units of altitude (eg. Meters or Feet)
-
-#29.200 denotes the geoidal separation (subtract this from the altitude of the antenna to arrive at the Height Above Ellipsoid (HAE).
-
-#M denotes the units used by the geoidal separation.
-
-#1.0 denotes the age of the correction (if any).
-
-#0000 denotes the correction station ID (if any).
-
-#*40 denotes the checksum.
+    # Every second print out current location details if there's a fix.
+    current = time.monotonic()
+    if current - last_print >= 1.0:
+        last_print = current
+        if not gps.has_fix:
+            # Try again if we don't have a fix yet.
+            f.write("Waiting for fix...")
+            continue
+        # We have a fix! (gps.has_fix is true)
+        # Print out details about the fix like location, date, etc.
+        f.write('=' * 40)  # Print a separator line.
+        f.write('Fix timestamp: {}/{}/{} {:02}:{:02}:{:02}'.format(
+            gps.timestamp_utc.tm_mon,   # Grab parts of the time from the
+            gps.timestamp_utc.tm_mday,  # struct_time object that holds
+            gps.timestamp_utc.tm_year,  # the fix time.  Note you might
+            gps.timestamp_utc.tm_hour,  # not get all data like year, day,
+            gps.timestamp_utc.tm_min,   # month!
+            gps.timestamp_utc.tm_sec))
+        f.write'Latitude: {0:.6f} degrees'.format(gps.latitude))
+        f.write('Longitude: {0:.6f} degrees'.format(gps.longitude))
+       f.write('Fix quality: {}'.format(gps.fix_quality))
+        # Some attributes beyond latitude, longitude and timestamp are optional
+        # and might not be present.  Check if they're None before trying to use!
+        if gps.satellites is not None:
+            f.write('# satellites: {}'.format(gps.satellites))
+        if gps.altitude_m is not None:
+            f.write('Altitude: {} meters'.format(gps.altitude_m))
+        if gps.speed_knots is not None:
+            f.write('Speed: {} knots'.format(gps.speed_knots))
+        if gps.track_angle_deg is not None:
+            f.write('Track angle: {} degrees'.format(gps.track_angle_deg))
+        if gps.horizontal_dilution is not None:
+            f.write('Horizontal dilution: {}'.format(gps.horizontal_dilution))
+        if gps.height_geoid is not None:
+            f.write'Height geo ID: {} meters'.format(gps.height_geoid))
