@@ -74,6 +74,8 @@ while True:
 	if not gps.has_fix:
             # Try again if we don't have a fix yet.
 		f.write("Waiting for fix...\n")
+		f.flush()
+		time.sleep(2)
 		continue
         # We have a fix! (gps.has_fix is true)
         # Print out details about the fix like location, date, etc.
@@ -88,7 +90,7 @@ while True:
 	f.write('Latitude: {0:.6f} degrees'.format(gps.latitude))
 	f.write('Longitude: {0:.6f} degrees'.format(gps.longitude))
 	f.write('Fix quality: {}'.format(gps.fix_quality))
-        
+	f.flush()
 	# Some attributes beyond latitude, longitude and timestamp are optional
         # and might not be present.  Check if they're None before trying to use!
 	if gps.satellites is not None:
@@ -103,5 +105,7 @@ while True:
 		f.write('Horizontal dilution: {}'.format(gps.horizontal_dilution))
 	if gps.height_geoid is not None:
 		f.write('Height geo ID: {} meters'.format(gps.height_geoid))
+	f.flush()
+
 
 f.close()
