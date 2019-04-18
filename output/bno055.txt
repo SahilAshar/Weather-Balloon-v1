@@ -1,1 +1,0 @@
-Time    Temperature    Accelerometer    Magnetometer    Gyroscope    Euler angle     Quaternion    Linear acceleration    Gravity
